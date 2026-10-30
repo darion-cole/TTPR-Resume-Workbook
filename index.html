@@ -282,7 +282,8 @@ const PRESETS = {
     concentration: "Data Analytics",
     heading: "DATA ANALYTICS & TECHNOLOGY EXPERIENCE",
     title: "Data Analytics Apprentice",
-    entry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch", location: "", dates: "06/2026 – Present", inline: true, upper: true },
+    entry: { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "", location: "", dates: "06/2026 – Present", inline: true, upper: false },
+    interimEntry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch" },
     bullets: [
       "Completed a 12-week, 295-hour data analytics residency covering 30+ skills, including machine learning, generative AI, and agentic AI, through 19 hands-on labs and projects, 8 guest lectures and workshops, and 1:1 career coaching",
       "Cleaned and transformed real-world datasets of up to 34,500 rows in Excel (Power Query) and Python, applying t-tests, chi-square tests, correlation analysis, and ADF stationarity tests",
@@ -329,7 +330,8 @@ const PRESETS = {
     concentration: "Cybersecurity",
     heading: "CYBERSECURITY & TECHNOLOGY EXPERIENCE",
     title: "Cybersecurity Apprentice",
-    entry: { org: "Tech Talent Pipeline Residency Program Apprenticeship,", about: "New York, NY", location: "", dates: "06/2026 – Present", inline: true, upper: false },
+    entry: { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "", location: "", dates: "06/2026 – Present", inline: true, upper: false },
+    interimEntry: { org: "Tech Talent Pipeline Residency Program Apprenticeship,", about: "New York, NY" },
     prevEntry: { title: "Cybersecurity Tech Residency Apprentice", org: TTPR_ORG, about: TTPR_ABOUT, location: TTPR_LOC, dates: "06/2026 – Present", inline: false },
     bullets: [
       "Completed a 12-week, 295-hour cybersecurity residency covering 25+ skills, including IT audit, GRC, IAM, cloud security, SIEM, and LLM security, through 30+ hands-on labs, 8 guest speakers and workshops, and 1:1 career coaching",
@@ -465,6 +467,9 @@ function migrateState(obj) {
   // TTPR date uses MM/YYYY like the rest of the resume
   if (clean(d.ttpr.dates) === "Jun 2026 – Present") d.ttpr.dates = "06/2026 – Present";
   if (d.skills.layout === "line" && !clean(d.skills.line) && PRESETS[d.track]) d.skills.line = PRESETS[d.track].line;
+  // 10/30/2026: both tracks use "Tech Talent Pipeline Residency Program Apprenticeship - <title>"
+  { const t = d.ttpr, p = PRESETS[d.track];
+    if (p && p.interimEntry && clean(t.org) === p.interimEntry.org && clean(t.about) === p.interimEntry.about) { t.org = p.entry.org; t.about = ""; t.upper = false; } }
   // 10/2026: new Cybersecurity TTPR entry (single program line, six bullets)
   if (d.track === "cyber") {
     const t = d.ttpr, p = PRESETS.cyber, pe = p.prevEntry;
@@ -594,7 +599,7 @@ function buildModel(s) {
   if (t.include) {
     const g = [];
     if (t.inline) {
-      const about = [clean(t.about), clean(t.title)].filter(Boolean).join(" - ");
+      const about = has(t.about) ? [clean(t.about), clean(t.title)].filter(Boolean).join(" - ") : (has(t.title) ? "- " + clean(t.title) : "");
       g.push(entryHead(t.org || TTPR_ORG, about, t.dates, { upper: t.upper !== false }));
     } else {
       g.push(entryHead(t.org || TTPR_ORG, t.about, t.location, { rightBold: true }));
@@ -999,7 +1004,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = { PRESETS,
         ${t.include ? `<div class="grid2">
           <div class="full" style="margin-bottom:4px">${checkbox("ttpr.inline", "Put my title on the same line as the program name", { rerender: true })}</div>
           ${field("ttpr.org", "Program name", { ph: "NYC Tech Talent Pipeline Residency (TTPR)" })}
-          ${field("ttpr.about", "Description", { ph: t.inline ? "at Baruch" : "Apprenticeship at Baruch College", hint: t.inline ? "Prints in gray after the program name, followed by your title." : "Prints in gray after the program name." })}
+          ${field("ttpr.about", "Description", { optional: t.inline, ph: t.inline ? "" : "Apprenticeship at Baruch College", hint: t.inline ? "Usually left blank. If filled in, it prints in gray between the program name and your title." : "Prints in gray after the program name." })}
           ${t.inline ? "" : field("ttpr.location", "Location", { ph: "New York, NY" })}
           ${field("ttpr.dates", "Dates", { ph: "06/2026 – Present", hint: t.inline ? "Lines up on the right of the program line." : "" })}
           ${field("ttpr.title", "Title", { ph: "Data Analytics Apprentice", full: !t.inline })}
