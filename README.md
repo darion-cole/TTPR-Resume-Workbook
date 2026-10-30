@@ -2,7 +2,7 @@
 
 A step-by-step resume builder for students in the NYC Tech Talent Pipeline Residency (TTPR) at Baruch College. It follows the TTPR Cohort-2 Resume Guide, shows a live preview, and downloads the finished resume as a Word (.docx) file.
 
-**Use it:** https://darion-cole.github.io/ttpr-resume-workbook/
+**Use it:** https://darion-cole.github.io/TTPR-Resume-Workbook/
 
 - Everything runs in the student's browser. Nothing they type is uploaded or stored on a server.
 - Progress autosaves in that browser. To move to another computer, use **Save progress file**, then **Load progress file** there.
