@@ -286,11 +286,11 @@ const PRESETS = {
     entry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch", location: "", dates: "06/2026 – Present", inline: true, upper: true },
     interimEntries: [{ org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch" }, { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "" }],
     bullets: [
-      "Analyzed and transformed real-world datasets up to 34,500 rows using Excel (Power Query) and Python, applying statistical tests including t-tests, chi-square, correlation, and ADF stationarity tests.",
-      "Developed a relational database from scratch by designing schema and executing 20+ MySQL queries with joins, CASE logic, correlated subqueries, and GROUP BY/HAVING aggregations.",
-      "Built and evaluated classification, clustering, regression, and ARIMA forecasting models in Python, assessing precision, recall, F1, and silhouette scores across 4 model types.",
-      "Automated EDA reporting and generated synthetic training data using Claude API and generative AI in Python, increasing efficiency of manual processes.",
-      "Redesigned KPIs and forecasts into data-driven recommendations presented across 3 Tableau and 1 Excel financial dashboard, enhancing data visualization."
+      "Analyzed and transformed real-world datasets up to 34,500 rows using Excel (Power Query) and Python, applying statistical tests including t-tests, chi-square, correlation, and ADF stationarity tests",
+      "Developed a relational database from scratch by designing schema and executing 20+ MySQL queries with joins, CASE logic, correlated subqueries, and GROUP BY/HAVING aggregations",
+      "Built and evaluated classification, clustering, regression, and ARIMA forecasting models in Python, assessing precision, recall, F1, and silhouette scores across 4 model types",
+      "Automated EDA reporting and generated synthetic training data using Claude API and generative AI in Python, increasing efficiency of manual processes",
+      "Redesigned KPIs and forecasts into data-driven recommendations presented across 3 Tableau and 1 Excel financial dashboard, enhancing data visualization"
     ],
     bullets1030: [
       "Completed a 12-week, 295-hour data analytics residency covering 30+ skills, including machine learning, generative AI, and agentic AI, through 19 hands-on labs and projects, 8 guest lectures and workshops, and 1:1 career coaching",
@@ -337,8 +337,8 @@ const PRESETS = {
     label: "Cybersecurity",
     concentration: "Cybersecurity",
     heading: "CYBERSECURITY & TECHNOLOGY EXPERIENCE",
-    title: "Cyber Security Apprentice",
-    prevTitle: "Cybersecurity Apprentice",
+    title: "Cybersecurity Apprentice",
+    prevTitle: "Cyber Security Apprentice",
     entry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch", location: "", dates: "06/2026 – Present", inline: true, upper: true },
     interimEntries: [{ org: "Tech Talent Pipeline Residency Program Apprenticeship,", about: "New York, NY" }, { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "" }],
     prevEntry: { title: "Cybersecurity Tech Residency Apprentice", org: TTPR_ORG, about: TTPR_ABOUT, location: TTPR_LOC, dates: "06/2026 – Present", inline: false },
@@ -499,6 +499,8 @@ function migrateState(obj) {
   }
   // 11/2026: new five-bullet entries for both tracks, and the cyber title
   { const t = d.ttpr, p = PRESETS[d.track];
+    const strip = a => (a || []).map(x => clean(x).replace(/(?<!\.)\.$/, ""));
+    if (p && JSON.stringify(strip(t.bullets)) === JSON.stringify(p.bullets)) t.bullets = p.bullets.slice();
     if (p && JSON.stringify(t.bullets) === JSON.stringify(p.bullets1030)) {
       const kept = (t.subs || []).flat().map(clean).filter(Boolean);
       t.bullets = p.bullets.slice(); t.subs = t.bullets.map(() => []);
@@ -529,7 +531,33 @@ function trackPresetParts(track) {
 const R = (text, o = {}) => ({ text, b: !!o.b, gray: !!o.gray });
 const has = s => (s || "").toString().trim().length > 0;
 const clean = s => (s || "").toString().trim();
-function dateRange(a, b) { a = clean(a); b = clean(b); return a && b ? `${a} – ${b}` : (a || b); }
+const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const isMMYYYY = s => /^\d{2}\/\d{4}$/.test(s);
+const isRangeFmt = s => /^\d{2}\/\d{4} – (\d{2}\/\d{4}|Present)$/.test(s);
+/* Every date prints as MM/YYYY, and "current"/"present" as Present */
+function fmtDate(s) {
+  s = clean(s); if (!s) return s;
+  if (/^(present|current|now)$/i.test(s)) return "Present";
+  let m;
+  if ((m = s.match(/^(\d{1,2})\s*\/\s*(\d{4})$/)) && +m[1] >= 1 && +m[1] <= 12) return m[1].padStart(2, "0") + "/" + m[2];
+  if ((m = s.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})$/)) && +m[1] >= 1 && +m[1] <= 12) return m[1].padStart(2, "0") + "/" + m[2];
+  if ((m = s.match(/^([A-Za-z]{3,9})\.?,?\s+(\d{4})$/))) {
+    const w = m[1].toLowerCase(), i = MONTH_NAMES.findIndex(n => n.startsWith(w));
+    if (i >= 0) return String(i + 1).padStart(2, "0") + "/" + m[2];
+  }
+  return s;
+}
+/* "6/2026-current", "Jun 2026 to Present" -> "06/2026 – Present" */
+function fmtRange(s) {
+  s = clean(s); if (!s) return s;
+  const parts = s.split(/\s*[–—-]\s*|\s+to\s+/i);
+  if (parts.length === 2) {
+    const a = fmtDate(parts[0]), b = fmtDate(parts[1]);
+    if (isMMYYYY(a) && (isMMYYYY(b) || b === "Present")) return `${a} – ${b}`;
+  }
+  return fmtDate(s);
+}
+function dateRange(a, b) { a = fmtDate(a); b = fmtDate(b); return a && b ? `${a} – ${b}` : (a || b); }
 function gpaOk(g) { const n = parseFloat(clean(g)); return !isNaN(n) && n >= 3.5; }
 function tableLines(txt) { return (txt || "").split("\n").map(clean).filter(Boolean); }
 
@@ -556,7 +584,12 @@ function buildModel(s) {
     add(sec, { t: "heading", text: clean(heading).toUpperCase() });
     gs.forEach((g, i) => { if (i) add(sec, { t: "sep" }); g.forEach(b => add(sec, b)); });
   };
-  const bullet = (runs, level = 0) => ({ t: "bullet", runs: Array.isArray(runs) ? runs : [R(runs)], level });
+  const noEndPeriod = s => s.replace(/\s+$/, "").replace(/(?<!\.)\.$/, "");
+  const bullet = (runs, level = 0) => {
+    const rs = (Array.isArray(runs) ? runs : [R(runs)]).map(r => Object.assign({}, r));
+    if (rs.length) rs[rs.length - 1].text = noEndPeriod(rs[rs.length - 1].text);
+    return { t: "bullet", runs: rs, level };
+  };
   const bulletsOf = arr => (arr || []).map(clean).filter(Boolean).map(t => bullet(t));
   const entryHead = (name, about, right, o = {}) => ({ t: "entry", name: clean(name), about: clean(about), right: clean(right), gray: o.gray !== false, upper: o.upper !== false, rightBold: !!o.rightBold });
   const job = j => {
@@ -571,7 +604,7 @@ function buildModel(s) {
   const edu = s.education.map(e => {
     const g = [];
     if (!has(e.school) && !has(e.degree)) return g;
-    const grad = has(e.grad) ? `${e.gradLabel || "Expected Graduation"}- ${clean(e.grad)}` : "";
+    const grad = has(e.grad) ? `${e.gradLabel || "Expected Graduation"}- ${fmtDate(e.grad)}` : "";
     if (has(e.school) || grad) g.push({ t: "eduhead", school: clean(e.school).toUpperCase(), location: clean(e.location), right: grad });
     const extras = [has(e.concentration) ? `Concentration in ${clean(e.concentration)}` : "", gpaOk(e.gpa) ? `GPA: ${clean(e.gpa)}` : ""].filter(Boolean);
     if (has(e.degree) || extras.length) {
@@ -610,7 +643,7 @@ function buildModel(s) {
     }
   }
   const certs = sk.certs.filter(c => has(c.name)).map(c =>
-    c.status === "progress" ? `${clean(c.name)} (Expected Completion ${clean(c.date) || "MM/YYYY"})` : clean(c.name) + (has(c.date) ? ` (${clean(c.date)})` : ""));
+    c.status === "progress" ? `${clean(c.name)} (Expected Completion ${fmtDate(c.date) || "MM/YYYY"})` : clean(c.name) + (has(c.date) ? ` (${fmtDate(c.date)})` : ""));
   const skillCount = sb.filter(b => !b.ph).length;
   if (certs.length) sb.push({ t: "line", runs: [R("Certifications: ", { b: 1 }), R(certs.join("; "))] });
   if (has(sk.professional)) sb.push({ t: "line", runs: [R("Professional Skills: ", { b: 1 }), R(clean(sk.professional))] });
@@ -624,10 +657,10 @@ function buildModel(s) {
     const g = [];
     if (t.inline) {
       const about = has(t.about) ? [clean(t.about), clean(t.title)].filter(Boolean).join(" - ") : (has(t.title) ? "- " + clean(t.title) : "");
-      g.push(entryHead(t.org || TTPR_ORG, about, t.dates, { upper: t.upper !== false }));
+      g.push(entryHead(t.org || TTPR_ORG, about, fmtRange(t.dates), { upper: t.upper !== false, rightBold: true }));
     } else {
       g.push(entryHead(t.org || TTPR_ORG, t.about, t.location, { rightBold: true }));
-      if (has(t.title) || has(t.dates)) g.push({ t: "sub", text: clean(t.title), right: clean(t.dates), gray: false });
+      if (has(t.title) || has(t.dates)) g.push({ t: "sub", text: clean(t.title), right: fmtRange(t.dates), gray: false });
     }
     (t.bullets || []).forEach((x, i) => {
       if (!has(x)) return;
@@ -645,22 +678,22 @@ function buildModel(s) {
   // PROJECTS
   const c = s.capstone, pg = [];
   if (has(c.name)) {
-    pg.push([entryHead(c.name, "", c.date, { gray: false, rightBold: true }),
+    pg.push([entryHead(c.name, "", fmtRange(c.date), { gray: false, rightBold: true }),
       ...bulletsOf([c.purpose, c.approach, c.outcomes, c.contribution, ...(c.extra || [])])]);
   }
-  s.projects.forEach(p => { if (has(p.name)) pg.push([entryHead(p.name, "", p.dates, { gray: false, rightBold: true }), ...bulletsOf(p.bullets)]); });
+  s.projects.forEach(p => { if (has(p.name)) pg.push([entryHead(p.name, "", fmtRange(p.dates), { gray: false, rightBold: true }), ...bulletsOf(p.bullets)]); });
   section("projects", "PROJECTS", pg, true);
 
   // LEADERSHIP & INVOLVEMENT
   const lg = s.leadership.items.filter(it => has(it.org)).map(it => {
-    const g = [entryHead(it.org, "", it.location)];
-    if (has(it.role) || has(it.dates)) g.push({ t: "sub", text: clean(it.role), right: clean(it.dates), gray: false });
+    const g = [entryHead(it.org, "", it.location, { rightBold: true })];
+    if (has(it.role) || has(it.dates)) g.push({ t: "sub", text: clean(it.role), right: fmtRange(it.dates), gray: false });
     return g.concat(bulletsOf(it.bullets));
   });
   section("leadership", s.leadership.heading, lg, false);
 
   // AWARDS & RECOGNITION
-  const ag = s.awards.filter(a => has(a.name)).map(a => [{ t: "entry", name: clean(a.name), about: has(a.org) ? ", " + clean(a.org) : "", right: clean(a.date), gray: false, upper: false, aboutPlain: true }]);
+  const ag = s.awards.filter(a => has(a.name)).map(a => [{ t: "entry", name: clean(a.name), about: has(a.org) ? ", " + clean(a.org) : "", right: fmtRange(a.date), gray: false, upper: false, aboutPlain: true, rightBold: true }]);
   section("awards", "AWARDS & RECOGNITION", ag, false);
 
   return B;
@@ -705,24 +738,24 @@ function buildDocumentXml(model, root, sectPr) {
       case "heading":
         out += first ? empty(15) : empty(21);
         first = false;
-        out += p(`<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="000000"/></w:pBdr>${T900}`, run(b.text, { b: 1, color: "404040", sz: 22 }));
-        out += empty(4, T900) + empty(6, T900); break;
+        out += p(`<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="000000"/></w:pBdr>${T900}`, run(b.text, { b: 1, color: "404040", sz: 22 }));
+        out += empty(4, "<w:keepNext/>" + T900) + empty(6, "<w:keepNext/>" + T900); break;
       case "sep": out += empty(14, TENTRY); break;
       case "eduhead": {
         let runs = run(b.school, { b: 1, color: "404040" });
         if (b.location) runs += run("- ") + run(b.location, { b: 1 });
         if (b.right) runs += run(b.right, { tab: 1, b: 1 });
-        out += p(TENTRY, runs, { sz: 22 }); break;
+        out += p("<w:keepNext/>" + TENTRY, runs, { sz: 22 }); break;
       }
       case "entry": {
         const nameTxt = b.upper ? b.name.toUpperCase() : b.name;
         let runs = run(nameTxt, { b: 1, color: b.gray ? "404040" : "" });
         if (b.about) runs += run((b.aboutPlain ? "" : " ") + b.about, { color: b.aboutPlain ? "" : "404040" });
         if (b.right) runs += run(b.right, { tab: 1, b: b.rightBold });
-        out += p(TENTRY, runs, { sz: 22 }); break;
+        out += p("<w:keepNext/>" + TENTRY, runs, { sz: 22 }); break;
       }
       case "sub":
-        out += p(TENTRY, (b.text ? run(b.text, { color: b.gray ? "404040" : "" }) : "") + (b.right ? run(b.right, { tab: 1 }) : "")); break;
+        out += p("<w:keepNext/>" + TENTRY, (b.text ? run(b.text, { color: b.gray ? "404040" : "" }) : "") + (b.right ? run(b.right, { tab: 1 }) : "")); break;
       case "detail":
         out += p(`${NOBDR}<w:tabs><w:tab w:val="left" w:pos="284"/><w:tab w:val="left" w:pos="630"/></w:tabs><w:ind w:left="720"/>`, b.runs.map(r => run(r.text, { b: r.b, color: "000000" })).join(""), { color: "000000" }); break;
       case "bullet": out += bulletP(b); break;
@@ -919,7 +952,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = { PRESETS,
       return entry(i === 0 ? "Baruch College" : (e.school || "Another school"), i === 0 ? null : p, `<div class="grid2">
         ${field(p + ".school", "School", { ph: "Baruch College" })}
         ${field(p + ".location", "Location", { ph: "New York, NY" })}
-        ${field(p + ".degree", "Degree and major", { ph: "BA Business Administration - Computer Information Systems", full: true })}
+        ${field(p + ".degree", "Degree and major", { ph: "Bachelor of Business Administration - Computer Information Systems", full: true })}
         ${field(p + ".concentration", "Concentration", { ph: "Data Analytics or Cybersecurity", optional: i > 0, list: "conc-list", full: true })}
         ${field(p + ".gpa", "GPA", { ph: "3.7", optional: true, check: "gpa", hint: "Only shows on your resume if it's 3.5 or above." })}
         ${select(p + ".gradLabel", "Graduation", ["Expected Graduation", "Graduated"])}
@@ -1030,7 +1063,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = { PRESETS,
           ${field("ttpr.org", "Program name", { ph: "NYC Tech Talent Pipeline Residency (TTPR)" })}
           ${field("ttpr.about", "Description", { optional: t.inline, ph: t.inline ? "" : "Apprenticeship at Baruch College", hint: t.inline ? "Usually left blank. If filled in, it prints in gray between the program name and your title." : "Prints in gray after the program name." })}
           ${t.inline ? "" : field("ttpr.location", "Location", { ph: "New York, NY" })}
-          ${field("ttpr.dates", "Dates", { ph: "06/2026 – Present", hint: t.inline ? "Lines up on the right of the program line." : "" })}
+          ${field("ttpr.dates", "Dates", { ph: "06/2026 – Present", check: "range", hint: t.inline ? "Lines up on the right of the program line." : "" })}
           ${field("ttpr.title", "Title", { ph: "Data Analytics Apprentice", full: !t.inline })}
           <div class="full"><span class="label">What you did in TTPR</span>${ttprBullets()}</div>
         </div>` : ""}`)
@@ -1085,7 +1118,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = { PRESETS,
     const items = state.leadership.items.map((it, i) => entry(it.org || "New organization", `leadership.items.${i}`, `<div class="grid3">
       ${field(`leadership.items.${i}.org`, "Organization", { ph: "ColorStack" })}
       ${field(`leadership.items.${i}.location`, "Location", { ph: "New York, NY", optional: true })}
-      ${field(`leadership.items.${i}.dates`, "Dates", { ph: "09/2025 – Present" })}
+      ${field(`leadership.items.${i}.dates`, "Dates", { ph: "09/2025 – Present", check: "range" })}
       ${field(`leadership.items.${i}.role`, "Your role", { ph: "Member", optional: true, full: true })}
       <div class="full"><span class="label">What you did</span> <span class="opt hint">(optional)</span>${bullets(`leadership.items.${i}.bullets`)}</div></div>`, "Remove")).join("");
     return head(7, "Leadership & involvement", "Clubs, professional organizations, and community roles. The guide's examples include ISACA, NSBE, and ColorStack.")
@@ -1183,9 +1216,10 @@ if (typeof module !== "undefined" && module.exports) module.exports = { PRESETS,
 
   const DATE_RE = /^(0[1-9]|1[0-2])\/(19|20)\d{2}$/;
   const CHECKS = {
-    verb: v => (v || "").trim().length > 10 && !startsWithVerb(v) ? "Start with an action verb, like Analyzed, Built, or Led." : "",
+    verb: v => { v = (v || "").trim(); if (v.length > 10 && !startsWithVerb(v)) return "Start with an action verb, like Analyzed, Built, or Led."; return /[^.]\.$/.test(v) ? ["info", "The period at the end is left off on your resume."] : ""; },
     gpa: v => { v = (v || "").trim(); if (!v) return ""; const n = parseFloat(v); if (isNaN(n) || n > 4.5) return "Enter your GPA as a number, like 3.6."; return n < 3.5 ? ["info", "Under 3.5, so it stays off your resume. That's what the guide recommends."] : ""; },
-    date: v => { v = (v || "").trim(); return !v || DATE_RE.test(v) || /^present$/i.test(v) ? "" : "Use MM/YYYY, like 06/2027."; },
+    date: v => { v = (v || "").trim(); if (!v || DATE_RE.test(v) || v === "Present") return ""; const f = fmtRange(v); return isMMYYYY(f) || f === "Present" || isRangeFmt(f) ? ["info", `Shows as ${f} on your resume.`] : "Use MM/YYYY, like 06/2027."; },
+    range: v => { v = (v || "").trim(); if (!v || isRangeFmt(v) || DATE_RE.test(v)) return ""; const f = fmtRange(v); return isRangeFmt(f) || isMMYYYY(f) ? ["info", `Shows as ${f} on your resume.`] : "Use MM/YYYY – MM/YYYY or MM/YYYY – Present."; },
     certdate: (v, path) => { const c = getP(parentPath(path)); return c.name.trim() && c.status === "progress" && !(v || "").trim() ? "Add the date you expect to finish." : CHECKS.date(v); },
     metric: v => (v || "").trim().length > 10 && !/\d/.test(v) ? ["info", "Add a number if you can: a count, a percent, or time saved."] : "",
     coursework: v => /\b[A-Za-z]{2,4}\s?\d{3,5}\b/.test(v || "") ? "Leave out course numbers. List course names only, like Data Mining." : "",
