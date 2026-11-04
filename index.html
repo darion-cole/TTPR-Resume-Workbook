@@ -282,9 +282,17 @@ const PRESETS = {
     concentration: "Data Analytics",
     heading: "DATA ANALYTICS & TECHNOLOGY EXPERIENCE",
     title: "Data Analytics Apprentice",
-    entry: { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "", location: "", dates: "06/2026 – Present", inline: true, upper: false },
-    interimEntry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch" },
+    prevTitle: "Data Analytics Apprentice",
+    entry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch", location: "", dates: "06/2026 – Present", inline: true, upper: true },
+    interimEntries: [{ org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch" }, { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "" }],
     bullets: [
+      "Analyzed and transformed real-world datasets up to 34,500 rows using Excel (Power Query) and Python, applying statistical tests including t-tests, chi-square, correlation, and ADF stationarity tests.",
+      "Developed a relational database from scratch by designing schema and executing 20+ MySQL queries with joins, CASE logic, correlated subqueries, and GROUP BY/HAVING aggregations.",
+      "Built and evaluated classification, clustering, regression, and ARIMA forecasting models in Python, assessing precision, recall, F1, and silhouette scores across 4 model types.",
+      "Automated EDA reporting and generated synthetic training data using Claude API and generative AI in Python, increasing efficiency of manual processes.",
+      "Redesigned KPIs and forecasts into data-driven recommendations presented across 3 Tableau and 1 Excel financial dashboard, enhancing data visualization."
+    ],
+    bullets1030: [
       "Completed a 12-week, 295-hour data analytics residency covering 30+ skills, including machine learning, generative AI, and agentic AI, through 19 hands-on labs and projects, 8 guest lectures and workshops, and 1:1 career coaching",
       "Cleaned and transformed real-world datasets of up to 34,500 rows in Excel (Power Query) and Python, applying t-tests, chi-square tests, correlation analysis, and ADF stationarity tests",
       "Wrote 20+ MySQL queries using joins, CASE logic, correlated subqueries, and GROUP BY/HAVING aggregations; designed a schema and developed a relational database from scratch",
@@ -329,11 +337,19 @@ const PRESETS = {
     label: "Cybersecurity",
     concentration: "Cybersecurity",
     heading: "CYBERSECURITY & TECHNOLOGY EXPERIENCE",
-    title: "Cybersecurity Apprentice",
-    entry: { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "", location: "", dates: "06/2026 – Present", inline: true, upper: false },
-    interimEntry: { org: "Tech Talent Pipeline Residency Program Apprenticeship,", about: "New York, NY" },
+    title: "Cyber Security Apprentice",
+    prevTitle: "Cybersecurity Apprentice",
+    entry: { org: "NYC Tech Talent Pipeline Residency (TTPR)", about: "at Baruch", location: "", dates: "06/2026 – Present", inline: true, upper: true },
+    interimEntries: [{ org: "Tech Talent Pipeline Residency Program Apprenticeship,", about: "New York, NY" }, { org: "Tech Talent Pipeline Residency Program Apprenticeship", about: "" }],
     prevEntry: { title: "Cybersecurity Tech Residency Apprentice", org: TTPR_ORG, about: TTPR_ABOUT, location: TTPR_LOC, dates: "06/2026 – Present", inline: false },
     bullets: [
+      "Identified terminated, stale, over-privileged, and SoD-conflicting access, to complete a SOC 2 readiness access review of 30 user accounts across Okta, AWS IAM, GitHub, Jira, and Salesforce, executing 15 ITGC test steps",
+      "Scaled business network infrastructure using VLAN segmentation in Cisco Packet Tracer across 6 hosts and 3 networks, configured a 2-subnet AWS VPC with a bastion host, and analyzed a 49,000-packet Wireshark capture across 5 protocols",
+      "Secured business assets via MFA, self-service password reset, and password protection in Microsoft Entra ID; encrypted, decrypted, and signed messages with 2048-bit RSA keys in OpenSSL; cracked password hashes with John the Ripper",
+      "Strengthened network systems defense by investigating a suspicious login in Splunk, correlating 7 Windows Security event IDs with SPL; exploited and patched 2 XSS vulnerabilities and fuzzed a vulnerable server from Kali Linux",
+      "Developed a GitHub Actions CI pipeline and deployed AWS workloads on S3 and EC2 with scoped access policies; created a guard railed LLM chatbot and red-teamed rival bots with prompt injection"
+    ],
+    bullets1030: [
       "Completed a 12-week, 295-hour cybersecurity residency covering 25+ skills, including IT audit, GRC, IAM, cloud security, SIEM, and LLM security, through 30+ hands-on labs, 8 guest speakers and workshops, and 1:1 career coaching",
       "Performed a SOC 2 readiness access review of 30 user accounts across Okta, AWS IAM, GitHub, Jira, and Salesforce, executing 15 ITGC test steps to identify terminated, stale, over-privileged, and SoD-conflicting access",
       "Segmented 6 hosts into 3 VLANs in Cisco Packet Tracer, configured a 2-subnet AWS VPC with a bastion host, and analyzed a 49,000-packet Wireshark capture across ARP, DHCP, DNS, TCP, and HTTP",
@@ -469,7 +485,7 @@ function migrateState(obj) {
   if (d.skills.layout === "line" && !clean(d.skills.line) && PRESETS[d.track]) d.skills.line = PRESETS[d.track].line;
   // 10/30/2026: both tracks use "Tech Talent Pipeline Residency Program Apprenticeship - <title>"
   { const t = d.ttpr, p = PRESETS[d.track];
-    if (p && p.interimEntry && clean(t.org) === p.interimEntry.org && clean(t.about) === p.interimEntry.about) { t.org = p.entry.org; t.about = ""; t.upper = false; } }
+    if (p && (p.interimEntries || []).some(e => clean(t.org) === e.org && clean(t.about) === e.about)) { t.org = p.entry.org; t.about = p.entry.about; t.upper = p.entry.upper; } }
   // 10/2026: new Cybersecurity TTPR entry (single program line, six bullets)
   if (d.track === "cyber") {
     const t = d.ttpr, p = PRESETS.cyber, pe = p.prevEntry;
@@ -481,6 +497,14 @@ function migrateState(obj) {
       if (kept.length) t.subs[0] = kept;
     }
   }
+  // 11/2026: new five-bullet entries for both tracks, and the cyber title
+  { const t = d.ttpr, p = PRESETS[d.track];
+    if (p && JSON.stringify(t.bullets) === JSON.stringify(p.bullets1030)) {
+      const kept = (t.subs || []).flat().map(clean).filter(Boolean);
+      t.bullets = p.bullets.slice(); t.subs = t.bullets.map(() => []);
+      if (kept.length) t.subs[0] = kept;
+    }
+    if (p && p.prevTitle && p.prevTitle !== p.title && clean(t.title) === p.prevTitle) t.title = p.title; }
   normalizeState(d);
   return d;
 }
